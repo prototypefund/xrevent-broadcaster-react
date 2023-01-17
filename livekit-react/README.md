@@ -1,19 +1,11 @@
-# livekit-react packages
-
 Checkout the docs under https://docs.livekit.io and the READMEs inside the [packages](#packages).
 
-## Packages
+## Dependency Packages
 
 - [@livekit/react-core](./packages/core/) provides a minimal set of helpers sans any additional dependencies
 - [@livekit/react-components](./packages/components/) includes everything from react-core plus pre-built and styled components.
 
-## Example apps
-
-- [livekit-react-example](./example/)
-
-## Development Setup
-
-This repo uses changesets for managing and publishing packages and turborepo as a taskrunner.
+## Development Setup Usage
 To get started run
 
 ```sh
