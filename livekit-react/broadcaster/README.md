@@ -1,5 +1,3 @@
-# LiveKit React Example App
+# XRevent LiveKit React Broadcaster App
 
-This is a video room example using LiveKit's React SDK. You can see this app live at https://example.livekit.io
-
-To run this example locally, follow [Development Setup](https://github.com/livekit/livekit-react#development-setup)
+This Browser App is using the LiveKit's React SDK to build a Video and Audio ingress for use with the Livekit SFU.
