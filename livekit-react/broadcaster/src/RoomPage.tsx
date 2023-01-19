@@ -1,19 +1,20 @@
-import { faSquare, faThLarge, faUserFriends } from '@fortawesome/free-solid-svg-icons';
+import { faUserFriends } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { Room, RoomEvent, setLogLevel, VideoPresets } from 'livekit-client';
-import { AudioRenderer, DisplayContext, DisplayOptions, LiveKitRoom,  ParticipantView,  StageProps } from '@livekit/react-components';
-import { useState } from 'react';
+import { Participant, Room, RoomEvent, setLogLevel, VideoPresets } from 'livekit-client';
+import { AudioRenderer, ControlsView, DisplayContext, DisplayOptions, LiveKitRoom,  ParticipantView,  StageProps } from '@livekit/react-components';
+import { ReactElement, useState } from 'react';
 import 'react-aspect-ratio/aspect-ratio.css';
 import { useNavigate, useLocation } from 'react-router-dom';
+import styles from '@livekit/react-components/src/components/desktop/styles.module.css';
 
 export const RoomPage = () => {
   const [numParticipants, setNumParticipants] = useState(0);
- 
 
-  const [displayOptions, setDisplayOptions] = useState<DisplayOptions>({
+  const [displayOptions] = useState<DisplayOptions>({
     stageLayout: 'grid',
     showStats: true,
   });
+
   const navigate = useNavigate();
   const query = new URLSearchParams(useLocation().search);
   const url = query.get('url');
@@ -25,12 +26,11 @@ export const RoomPage = () => {
   }
 
   const onLeave = () => {
-    navigate('/');
+    navigate('/provider');
   };
 
   const updateParticipantSize = (room: Room) => {
     setNumParticipants(room.participants.size + 1);
-    
   };
 
   const onParticipantDisconnected = (room: Room) => {
@@ -42,12 +42,7 @@ export const RoomPage = () => {
     }
   };
 
-  const updateOptions = (options: DisplayOptions) => {
-    setDisplayOptions({
-      ...displayOptions,
-      ...options,
-    });
-  };
+  
 
   return (
     <>
@@ -58,43 +53,16 @@ export const RoomPage = () => {
         <div className="topBar">
           <h2>XRevent Broadcaster</h2>
           <div className="right">
-            <div>
-              <input
-                id="showStats"
-                type="checkbox"
-                onChange={(e) => updateOptions({ showStats: e.target.checked })}
-              />
-              <label htmlFor="showStats">Show Stats</label>
-            </div>
-            <div>
-              <button
-                className="iconButton"
-                disabled={displayOptions.stageLayout === 'grid'}
-                onClick={() => {
-                  updateOptions({ stageLayout: 'grid' });
-                }}
-              >
-                <FontAwesomeIcon height={32} icon={faThLarge} />
-              </button>
-              <button
-                className="iconButton"
-                disabled={displayOptions.stageLayout === 'speaker'}
-                onClick={() => {
-                  updateOptions({ stageLayout: 'speaker' });
-                }}
-              >
-                <FontAwesomeIcon height={32} icon={faSquare} />
-              </button>
-            </div>
             <div className="participantCount">
               <FontAwesomeIcon icon={faUserFriends} />
-              <span>{numParticipants} / </span>
+              <span>{numParticipants} / 100 </span>
             </div>
           </div>
         </div>
         <LiveKitRoom
           url={url}
           token={token}
+          stageRenderer={providerStage}
           onConnected={(room) => {
             setLogLevel('debug');
             onConnected(room, query);
@@ -126,9 +94,9 @@ export const RoomPage = () => {
       <LiveKitRoom
         url={url}
         token={token}
-        stageRenderer={renderStage}
-        
-       
+        // override stageRenderer and controlsrenderere
+        stageRenderer={subscriberStage}
+              
       
         onConnected={(room) => {
           setLogLevel('debug');
@@ -208,7 +176,75 @@ export const RoomPage = () => {
 };
 
 
-function renderStage( roomProps: StageProps) {
+function providerStage( roomProps: StageProps){
+  if (roomProps.roomState.isConnecting) {
+    return <div>Connecting...</div>;
+  }
+  if (roomProps.roomState.error) {
+    return <div>Error: {roomProps.roomState.error.message}</div>;
+  }
+  if (!roomProps || !roomProps.roomState.room) {
+    return <div>Room closed</div>;
+  }
+  if (roomProps.roomState.participants.length === 0) {
+    return <div>no one is in the room</div>;
+  }
+
+
+  let otherParticipants = roomProps.roomState.participants;
+  let participantInFocus: Participant;
+  let mainView: ReactElement;
+  
+  [participantInFocus, ...otherParticipants] = roomProps.roomState.participants;
+  mainView = (
+    <ParticipantView
+      key={participantInFocus.identity}
+      participant={participantInFocus}
+      width="100%"
+      height="100%"
+      orientation="landscape"
+      showOverlay={true}
+      showConnectionQuality
+    />
+  );
+  
+ 
+
+  return(
+    <>
+      <div className={styles.container}>
+        {otherParticipants.length > 0 ?
+          <div className={styles.stage}>
+            <div className={styles.stageCenter}>
+              {mainView}
+            </div>
+              <div className={styles.sidebar}>
+                {otherParticipants.map((participant) => (
+                  <div key={participant.sid}>
+                    {(participant.identity)} 
+                    <div>Audio Level: {(participant.audioLevel)}</div>
+                    <div>Connection Quality: {(participant.connectionQuality)}</div>
+                    <div>Number of Tracks: {participant.tracks.size}</div>
+                    
+                  </div>
+                ))}
+              </div> 
+          </div>
+        : 
+        <>
+          {mainView}
+        </>  
+        }
+        <div className={styles.controlsArea}>
+          <ControlsView room={roomProps.roomState.room!} onLeave={roomProps.onLeave} />
+        </div>
+      </div>
+      
+    </>
+  );
+}
+
+function subscriberStage( roomProps: StageProps) {
   
   
   if (roomProps.roomState.isConnecting) {

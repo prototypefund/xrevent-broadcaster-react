@@ -1,10 +1,11 @@
-import { faBolt } from '@fortawesome/free-solid-svg-icons';
+import { faBolt, faPlayCircle } from '@fortawesome/free-solid-svg-icons';
 import { createLocalVideoTrack, LocalVideoTrack } from 'livekit-client';
 import { AudioSelectButton, ControlButton, VideoSelectButton } from '@livekit/react-components';
 import { VideoRenderer } from '@livekit/react-core';
 import { ReactElement, useEffect, useState } from 'react';
 import { AspectRatio } from 'react-aspect-ratio';
 import { useNavigate } from 'react-router-dom';
+import  subSplash  from './res/images/ProviderSplash.png'
 
 export const PreJoinPage = () => {
   // initial state from query parameters
@@ -18,9 +19,9 @@ export const PreJoinPage = () => {
   const [simulcast, setSimulcast] = useState(true);
   const [dynacast, setDynacast] = useState(true);
   const [adaptiveStream, setAdaptiveStream] = useState(true);
-  const [videoEnabled, setVideoEnabled] = useState(false);
+  const [videoEnabled, setVideoEnabled] = useState(true);
   const [audioEnabled, setAudioEnabled] = useState(true);
-  const [producerEnabled, setProducerEnabled] = useState(true);
+  const [producerEnabled] = useState(true);
   // disable connect button unless validated
   const [connectDisabled, setConnectDisabled] = useState(true);
   const [videoTrack, setVideoTrack] = useState<LocalVideoTrack>();
@@ -36,20 +37,10 @@ export const PreJoinPage = () => {
     } else {
       setConnectDisabled(true);
     }
+    
   }, [token, url]);
 
-  const toggleProducer = (e: React.ChangeEvent<HTMLInputElement>) => {  
-    setProducerEnabled(e.target.checked);
-    
-    toggleAudio();
-    toggleVideo();
-
-    if(producerEnabled){
-      
-    } else {
-
-    }
-  };
+  
 
   const toggleVideo = async () => {
     if (videoTrack) {
@@ -136,11 +127,19 @@ export const PreJoinPage = () => {
     });
   };
 
+  const navigateToSubscriber = async () =>{
+    navigate({
+        pathname: '/',
+      });
+  }
+
   let videoElement: ReactElement;
   if (videoTrack) {
     videoElement = <VideoRenderer track={videoTrack} isLocal={true} />;
   } else {
-    videoElement = <div>Subscriber only</div>;
+    videoElement = <div className="logo">
+                    <img src={subSplash} alt="Broadcast Subscriber Logo" />
+                  </div>;
   }
 
   return (
@@ -152,7 +151,12 @@ export const PreJoinPage = () => {
           <div>
             <div className="label">LiveKit URL</div>
             <div>
-              <input type="text" name="url" value={url} onChange={(e) => setUrl(e.target.value)} />
+              <input 
+                type="text" 
+                name="url" 
+                value={url} 
+                onChange={(e) => setUrl(e.target.value)} 
+              />
             </div>
           </div>
           <div>
@@ -168,16 +172,6 @@ export const PreJoinPage = () => {
             </div>
           </div>
           <div className="options">
-          <div>
-              <input
-                id="producerEnabled-option"
-                type="checkbox"
-                name="producerEnabled"
-                checked={producerEnabled}
-                onChange={toggleProducer}
-              />
-              <label htmlFor="producerEnabled-option">Stream Producer</label>
-            </div>
             <div>
               <input
                 id="simulcast-option"
@@ -217,6 +211,11 @@ export const PreJoinPage = () => {
 
         <div className="controlSection">
           <div>
+            <ControlButton
+              label="Switch"
+              icon={faPlayCircle}
+              onClick={navigateToSubscriber}
+            />
             <AudioSelectButton
               isMuted={!audioEnabled}
               onClick={toggleAudio}
